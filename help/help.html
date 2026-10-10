@@ -892,16 +892,31 @@ window.GT_HELP_META = {"personas": {"product-manager": {"plain": true, "core": [
   function cap(x){x=x.trim();return x.charAt(0).toUpperCase()+x.slice(1)+(/[.?!]$/.test(x)?"":".")}
   function add(){
     var key=decodeURIComponent((location.hash||"").replace(/^#/,"")).split("&")[0];
-    if(!key||key.indexOf("=")>=0||/^(all|start|workflows|security)$/.test(key)||key.indexOf("run:")===0)return;
+    if(key.indexOf("run:")===0){runBox();return;}
+    if(!key||key.indexOf("=")>=0||/^(all|start|workflows|security)$/.test(key))return;
     var main=document.getElementById("main");if(!main||main.querySelector(".gt-say"))return;
     var pg=pageData(key);var list=SAY[key]||((pg&&pg.variants[0].hear)||[]).slice(0,2).map(cap);if(!list.length)return;
     var code=main.querySelector("code, .cmd, h1, h2");if(!code)return;
     var box=document.createElement("div");box.className="gt-say";
-    var lab=document.createElement("span");lab.className="gt-say-l";lab.textContent="Or just say";box.appendChild(lab);
+    var tl=document.createElement("span");tl.className="gt-say-l";tl.textContent="Type";box.appendChild(tl);
+    var tc=document.createElement("code");tc.className="gt-cmd";tc.textContent=(pg&&pg.variants[0].cmd)||code.textContent.trim();box.appendChild(tc);
+    var lab=document.createElement("span");lab.className="gt-say-l";lab.style.marginTop=".5rem";lab.textContent="Or just say";box.appendChild(lab);
     list.forEach(function(t){var q=document.createElement("q");q.textContent=t;box.appendChild(q)});
     var row=code.parentElement;if(row&&row.parentNode&&row!==main){row.parentNode.insertBefore(box,row.nextSibling)}else{main.insertBefore(box,main.firstChild)}
   }
-  var st=document.createElement("style");st.textContent=".gt-say{display:block;width:100%;flex-basis:100%;margin:.7rem 0 .2rem;padding:.6rem .8rem;border-left:3px solid rgba(240,181,74,.75);background:rgba(240,181,74,.07);border-radius:6px}.gt-say-l{display:block;margin-bottom:.25rem}.gt-say q{display:block;margin:.15rem 0}.gt-say-l{font:600 .72rem ui-monospace,Menlo,monospace;letter-spacing:.08em;text-transform:uppercase;opacity:.7}.gt-say q{font-style:italic;font-size:1.02rem}";document.head.appendChild(st);
+  var st=document.createElement("style");st.textContent=".gt-say{display:block;width:100%;flex-basis:100%;margin:.7rem 0 .2rem;padding:.6rem .8rem;border-left:3px solid rgba(240,181,74,.75);background:rgba(240,181,74,.07);border-radius:6px}.gt-say-l{display:block;margin-bottom:.25rem}.gt-say q{display:block;margin:.15rem 0}.gt-say .gt-cmd{display:block;font:500 1rem ui-monospace,Menlo,monospace;margin:.15rem 0}.gt-say-l{font:600 .72rem ui-monospace,Menlo,monospace;letter-spacing:.08em;text-transform:uppercase;opacity:.7}.gt-say q{font-style:italic;font-size:1.02rem}";document.head.appendChild(st);
+  function runBox(){
+    var head=document.getElementById("run-head");if(!head||head.querySelector(".gt-say"))return;
+    var full=[];Array.prototype.forEach.call(document.querySelectorAll(".stages button"),function(x){var t=x.textContent.replace(/^\s*\d+\.\s*/,"").trim();if(t.charAt(0)==="/")full.push(t)});
+    var cmds=[];Array.prototype.forEach.call(document.querySelectorAll("#run-cmds a"),function(x){var c=x.textContent.trim();var hit=null;full.forEach(function(f){if(!hit&&(f===c||f.indexOf(c+" ")===0))hit=f});cmds.push(hit||c)});
+    if(!cmds.length)cmds=full;
+    var said=head.querySelector(".bubble-you q");
+    var box=document.createElement("div");box.className="gt-say";
+    var l1=document.createElement("span");l1.className="gt-say-l";l1.textContent=cmds.length>1?"Type, in order":"Type";box.appendChild(l1);
+    cmds.forEach(function(c){var e=document.createElement("code");e.className="gt-cmd";e.textContent=c;box.appendChild(e)});
+    if(said){var l2=document.createElement("span");l2.className="gt-say-l";l2.style.marginTop=".5rem";l2.textContent="Or just say";box.appendChild(l2);var q=document.createElement("q");q.textContent=said.textContent;box.appendChild(q)}
+    var h=head.querySelector("h2");h.parentNode.insertBefore(box,h.nextSibling);
+  }
   function later(){setTimeout(add,60)}
   window.addEventListener("hashchange",later);if(document.readyState!=="loading")later();else document.addEventListener("DOMContentLoaded",later);
 })();
