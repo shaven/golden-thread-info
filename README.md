@@ -14,3 +14,4 @@ The plugin's source, docs and issues live in the main repo. This repo holds only
 - [`media/golden-thread-explainer.mp4`](media/golden-thread-explainer.mp4): the explainer as a video (1920×1080, 82 s, no sound), recorded from the page.
 - [`media/golden-thread-poster.png`](media/golden-thread-poster.png): the title card, also used as the link-preview image.
 - [`walkthrough.html`](walkthrough.html): a gt-visualize 3D walkthrough of how Golden Thread helps every role, made with gt-visualize itself.
+- [`help/`](help/help.html): gt 0.21.0's offline help, the same file `/gt:gt-help` opens. The page's feature tiles and workflow links open it at the matching command, workflow or tab.
