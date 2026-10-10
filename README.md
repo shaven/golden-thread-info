@@ -8,8 +8,9 @@ The plugin's source, docs and issues live in the main repo. This repo holds only
 
 ## Media
 
-- [`media/golden-thread-v3-full.mp4`](media/golden-thread-v3-full.mp4): the full video (1920×1080, 122 s, no sound), rendered frame by frame.
-- [`media/golden-thread-v3-short.mp4`](media/golden-thread-v3-short.mp4): the 72-second cut.
+- [`media/golden-thread-v4-full.mp4`](media/golden-thread-v4-full.mp4): the full video (1920×1080, 129 s, no sound), rendered frame by frame.
+- [`media/golden-thread-v4-short.mp4`](media/golden-thread-v4-short.mp4): the 78-second cut.
 
 - [`media/golden-thread-explainer.mp4`](media/golden-thread-explainer.mp4): the explainer as a video (1920×1080, 82 s, no sound), recorded from the page.
 - [`media/golden-thread-poster.png`](media/golden-thread-poster.png): the title card, also used as the link-preview image.
+- [`walkthrough.html`](walkthrough.html): a gt-visualize 3D walkthrough of how Golden Thread helps every role, made with gt-visualize itself.
