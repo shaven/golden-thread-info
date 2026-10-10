@@ -3,319 +3,536 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="description" content="How Golden Thread gives Claude Code sessions shared memory and enforces rules with hooks, and what is new in 0.21.0.">
+<meta name="description" content="Golden Thread for Claude Code: shared memory, rules re-asserted for every response, security levels, Touch ID approvals and the LOTR gateway. v0.21.0 on 2026-10-11.">
 <style>body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
 <title>Golden Thread</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
-/* Layout: one narrow reading column; a gold "thread" runs down the left edge and ties the sections together; the terminal player is the one wide, loud object. */
+/* Layout: a cinematic 16:9 stage that plays like a video (a golden thread weaving through sessions), then a quiet reading column with the facts. Dark-first: the stage is the identity. */
 :root {
-  --ink: #16202e;
-  --muted: #5a6577;
-  --paper: #f6f7f9;
-  --panel: #ffffff;
-  --rule: #d9dee6;
-  --gold: #a87308;
-  --gold-soft: #f3e6c4;
-  --ok: #2f7d4f;
-  --stop: #b3261e;
-  --term-bg: #111823;
-  --term-fg: #d7dde6;
-  --term-dim: #7f8a9b;
-  --term-gold: #e8b64a;
-  --term-red: #ff7a6e;
-  --term-green: #7fd49b;
+  --bg: #070b14;
+  --bg2: #0e1626;
+  --fg: #e9edf3;
+  --muted: #94a0b4;
+  --line: #22304a;
+  --gold: #f0b54a;
+  --gold-deep: #c98a1c;
+  --ember: #ff7a59;
+  --ok: #7fd49b;
+  --stop: #ff6b5e;
+  --card: #111a2b;
   --display: "Bricolage Grotesque", "Avenir Next", "Segoe UI", system-ui, sans-serif;
   --body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
   --mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  color-scheme: dark;
 }
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    --ink: #e6eaf0; --muted: #9aa5b6; --paper: #0d131c; --panel: #151d29; --rule: #263142;
-    --gold: #e3ad3c; --gold-soft: #3a2e12; --ok: #6fcf93; --stop: #ff8a80;
-    --term-bg: #080c12; color-scheme: dark;
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    --bg: #f4f5f8; --bg2: #e9edf3; --fg: #141b28; --muted: #556074; --line: #d3d9e3;
+    --gold: #a86f06; --gold-deep: #8a5a00; --card: #ffffff; --ok: #237a47; --stop: #b3261e; color-scheme: light;
   }
 }
-:root[data-theme="dark"] {
-  --ink: #e6eaf0; --muted: #9aa5b6; --paper: #0d131c; --panel: #151d29; --rule: #263142;
-  --gold: #e3ad3c; --gold-soft: #3a2e12; --ok: #6fcf93; --stop: #ff8a80;
-  --term-bg: #080c12; color-scheme: dark;
+:root[data-theme="light"] {
+  --bg: #f4f5f8; --bg2: #e9edf3; --fg: #141b28; --muted: #556074; --line: #d3d9e3;
+  --gold: #a86f06; --gold-deep: #8a5a00; --card: #ffffff; --ok: #237a47; --stop: #b3261e; color-scheme: light;
 }
 * { box-sizing: border-box; }
-body { background: var(--paper); color: var(--ink); font-family: var(--body); font-size: 17px; line-height: 1.6; }
-.wrap { max-width: 980px; margin: 0 auto; padding-inline: 20px; padding-block: 0 72px; position: relative; }
-.thread { position: absolute; left: 6px; top: 0; bottom: 0; width: 2px; background: linear-gradient(var(--gold), var(--gold) 70%, transparent); opacity: .55; }
-@media (min-width: 760px) { .wrap { padding-inline: 48px; } .thread { left: 22px; } }
-section { padding-block: 56px 8px; display: grid; gap: 18px; }
+body { background: var(--bg); color: var(--fg); font-family: var(--body); font-size: 17px; line-height: 1.6; }
+.wrap { max-width: 1100px; margin: 0 auto; padding-inline: 16px; padding-block: 28px 72px; display: grid; gap: 56px; }
+@media (min-width: 760px) { .wrap { padding-inline: 32px; } }
 h1, h2, h3 { font-family: var(--display); line-height: 1.08; text-wrap: balance; margin: 0; }
-h1 { font-size: clamp(2.3rem, 6vw, 4.2rem); font-weight: 800; letter-spacing: -0.02em; }
-h2 { font-size: clamp(1.6rem, 3.6vw, 2.3rem); font-weight: 700; letter-spacing: -0.01em; }
-h3 { font-size: 1.15rem; font-weight: 700; }
+h2 { font-size: clamp(1.6rem, 3.6vw, 2.3rem); font-weight: 700; }
+h3 { font-size: 1.1rem; font-weight: 700; }
 p { margin: 0; max-width: 64ch; }
-.eyebrow { font-family: var(--mono); font-size: .78rem; letter-spacing: .12em; text-transform: uppercase; color: var(--gold); }
-.lede { font-size: 1.2rem; color: var(--muted); max-width: 58ch; }
-.hero { padding-block: 64px 12px; }
-code { font-family: var(--mono); font-size: .88em; background: var(--gold-soft); padding: 1px 5px; border-radius: 4px; }
-.actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 6px; }
-.btn { font: 600 .98rem var(--body); padding: 11px 18px; border-radius: 8px; border: 1px solid var(--ink); color: var(--ink); text-decoration: none; background: transparent; cursor: pointer; }
-.btn.primary { background: var(--ink); color: var(--paper); }
-.btn:focus-visible, .tab:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
-.facts { display: flex; flex-wrap: wrap; gap: 10px 22px; font-family: var(--mono); font-size: .85rem; color: var(--muted); margin-top: 8px; }
-.facts b { color: var(--ink); font-weight: 500; }
+a { color: var(--gold); }
+code { font-family: var(--mono); font-size: .86em; color: var(--gold); }
+.eyebrow { font-family: var(--mono); font-size: .76rem; letter-spacing: .14em; text-transform: uppercase; color: var(--gold); }
 
-/* terminal player */
-.player { background: var(--term-bg); color: var(--term-fg); border-radius: 12px; overflow: hidden; box-shadow: 0 18px 50px -24px rgba(10, 20, 40, .55); }
-.tabs { display: flex; flex-wrap: wrap; gap: 4px; padding: 10px 10px 0; background: rgba(255,255,255,.03); border-bottom: 1px solid rgba(255,255,255,.08); }
-.tab { font: 500 .85rem var(--mono); color: var(--term-dim); background: transparent; border: 0; border-bottom: 2px solid transparent; padding: 8px 12px 10px; cursor: pointer; }
-.tab[aria-selected="true"] { color: var(--term-gold); border-bottom-color: var(--term-gold); }
-.screen { font: 400 .9rem/1.65 var(--mono); padding: 18px 20px 8px; min-height: 330px; overflow-x: auto; white-space: pre-wrap; word-break: break-word; }
-.screen .l { display: block; }
-.screen .dim { color: var(--term-dim); }
-.screen .you { color: #ffffff; }
-.screen .gold { color: var(--term-gold); }
-.screen .red { color: var(--term-red); font-weight: 500; }
-.screen .green { color: var(--term-green); }
-.screen .hide { visibility: hidden; }
-.bar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; padding: 10px 16px 14px; border-top: 1px solid rgba(255,255,255,.08); }
-.note { font: 400 .78rem var(--mono); color: var(--term-dim); }
-.replay { font: 500 .82rem var(--mono); color: var(--term-gold); background: transparent; border: 1px solid rgba(232,182,74,.5); border-radius: 6px; padding: 6px 12px; cursor: pointer; }
+/* ---------- the stage (always dark: it is the film) ---------- */
+.stage-wrap { display: grid; gap: 12px; }
+.stage { position: relative; width: 100%; max-width: 100%; aspect-ratio: 16 / 9; border-radius: 16px; overflow: hidden; container-type: inline-size;
+  background: radial-gradient(120% 90% at 18% 10%, #3a2610 0%, rgba(58,38,16,0) 45%), radial-gradient(90% 90% at 90% 100%, #14204a 0%, rgba(20,32,74,0) 60%), #06090f;
+  color: #eef1f6; box-shadow: 0 30px 80px -40px rgba(0,0,0,.8); }
+.stage canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+.scene { position: absolute; inset: 0; display: grid; place-items: center; text-align: center; padding: 6cqw 7cqw; opacity: 0; transform: translateY(1.5cqw) scale(.985); transition: opacity .7s ease, transform .9s cubic-bezier(.2,.7,.2,1); pointer-events: none; }
+.scene.on { opacity: 1; transform: none; }
+.scene .inner { display: grid; gap: 1.6cqw; justify-items: center; max-width: 82cqw; }
+.big { font-family: var(--display); font-weight: 800; font-size: 8.4cqw; letter-spacing: -0.03em; line-height: .95; }
+.mid { font-family: var(--display); font-weight: 700; font-size: 4.6cqw; letter-spacing: -0.02em; line-height: 1.02; }
+.sub { font-size: 2.1cqw; color: #b6c0d0; max-width: 62cqw; line-height: 1.45; }
+.goldtxt { color: #f0b54a; }
+.emb { color: #ff9a6e; }
+.chips { display: flex; flex-wrap: wrap; justify-content: center; gap: 1cqw; }
+.chip { font: 500 1.35cqw var(--mono); padding: .6cqw 1.3cqw; border-radius: 99px; border: 1px solid rgba(255,255,255,.18); color: #c9d1de; background: rgba(255,255,255,.04); }
+.chip.g { border-color: rgba(240,181,74,.7); color: #f0b54a; }
+/* reply card + stamp */
+.reply { font: 400 1.65cqw/1.55 var(--mono); text-align: left; background: rgba(10,16,28,.85); border: 1px solid rgba(255,255,255,.12); border-radius: 1.2cqw; padding: 2cqw 2.4cqw; width: 62cqw; position: relative; }
+.reply .dim { color: #7f8a9b; }
+.stamp { position: absolute; right: 2cqw; top: 50%; transform: translateY(-50%) rotate(-8deg) scale(2.2); opacity: 0; font: 800 3.2cqw var(--display); color: #ff6b5e; border: .35cqw solid #ff6b5e; border-radius: .8cqw; padding: .3cqw 1.4cqw; letter-spacing: .04em; transition: transform .35s cubic-bezier(.3,1.6,.5,1), opacity .2s; }
+.scene.on .stamp { transition-delay: 1.6s; opacity: 1; transform: translateY(-50%) rotate(-8deg) scale(1); }
+.why { font: 500 1.4cqw var(--mono); color: #ff9a8f; opacity: 0; transition: opacity .5s 2.2s; }
+.scene.on .why { opacity: 1; }
+/* rules grid */
+.grid10 { display: grid; grid-template-columns: repeat(5, 1fr); gap: 1cqw; width: 70cqw; }
+.cell { font: 500 1.25cqw/1.3 var(--body); padding: 1.3cqw 1cqw; border-radius: 1cqw; border: 1px solid rgba(255,255,255,.12); background: rgba(255,255,255,.03); color: #aeb8c8; opacity: 0; transform: translateY(1cqw); transition: all .5s; }
+.cell.v { border-color: rgba(240,181,74,.75); background: rgba(240,181,74,.1); color: #f6d48c; box-shadow: 0 0 2.4cqw -0.8cqw rgba(240,181,74,.7); }
+.scene.on .cell { opacity: 1; transform: none; }
+/* ladder */
+.ladder { display: grid; gap: .8cqw; width: 52cqw; }
+.rung { display: grid; grid-template-columns: 1fr auto; align-items: center; font: 600 1.8cqw var(--display); text-align: left; padding: 1cqw 1.8cqw; border-radius: 1cqw; border: 1px solid rgba(255,255,255,.14); background: rgba(255,255,255,.03); opacity: 0; transform: translateX(-2cqw); transition: all .45s; }
+.rung small { font: 400 1.2cqw var(--mono); color: #8e9aae; }
+.rung.p { border-color: rgba(240,181,74,.8); background: linear-gradient(90deg, rgba(240,181,74,.16), rgba(240,181,74,.02)); color: #f6d48c; }
+.scene.on .rung { opacity: 1; transform: none; }
+/* counter */
+.counter { font-family: var(--display); font-weight: 800; font-size: 15cqw; line-height: .9; color: #f0b54a; font-variant-numeric: tabular-nums; text-shadow: 0 0 5cqw rgba(240,181,74,.35); }
+.bars { display: grid; gap: .8cqw; width: 56cqw; text-align: left; font: 500 1.3cqw var(--mono); color: #aeb8c8; }
+.bar { height: 1.6cqw; border-radius: .8cqw; background: rgba(255,255,255,.08); overflow: hidden; }
+.bar i { display: block; height: 100%; width: 0; border-radius: inherit; transition: width 1.6s cubic-bezier(.2,.7,.2,1) .3s; }
+.bar.a i { background: #6b7790; } .bar.b i { background: #f0b54a; }
+.scene.on .bar.a i { width: 100%; } .scene.on .bar.b i { width: 2%; }
+/* timeline */
+.tl { display: grid; gap: 1cqw; width: 64cqw; text-align: left; font: 400 1.6cqw/1.45 var(--mono); }
+.tl div { opacity: 0; transform: translateY(.8cqw); transition: all .5s; }
+.scene.on .tl div { opacity: 1; transform: none; }
+.tl b { color: #f0b54a; font-weight: 500; }
+.tl .x { color: #ff8a7a; } .tl .ok { color: #7fd49b; }
+/* new list */
+.newgrid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.2cqw; width: 84cqw; }
+.nw { text-align: left; padding: 1.4cqw 1.6cqw; border-radius: 1.2cqw; background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.1); opacity: 0; transform: scale(.96); transition: all .5s; }
+.nw b { display: block; font: 700 1.75cqw/1.15 var(--display); color: #f6d48c; margin-bottom: .5cqw; }
+.nw span { font-size: 1.3cqw; color: #aeb8c8; line-height: 1.35; display: block; }
+.scene.on .nw { opacity: 1; transform: none; }
+/* personas */
+.personas { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1cqw; width: 80cqw; }
+.pa { text-align: left; padding: 1.2cqw 1.4cqw; border-radius: 1cqw; border: 1px solid rgba(255,255,255,.12); background: rgba(255,255,255,.04); opacity: 0; transform: translateY(1cqw); transition: all .5s; }
+.pa b { display: block; font: 700 1.7cqw/1.15 var(--display); color: #f6d48c; }
+.pa span { display: block; font-size: 1.2cqw; color: #aeb8c8; line-height: 1.3; margin-top: .4cqw; }
+.scene.on .pa { opacity: 1; transform: none; }
+.small2 { font-size: 1.6cqw; }
+/* toggles */
+.toggles { display: grid; grid-template-columns: 1fr 1fr; gap: .9cqw 2.4cqw; width: 74cqw; }
+.tg { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 1cqw; text-align: left; padding: .9cqw 1.4cqw; border-radius: 1cqw; border: 1px solid rgba(255,255,255,.1); background: rgba(255,255,255,.03); }
+.tg span { font: 600 1.55cqw/1.2 var(--display); }
+.tg small { display: block; font: 400 1.1cqw var(--mono); color: #8e9aae; margin-top: .2cqw; }
+.tg i { width: 4.2cqw; height: 2.3cqw; border-radius: 99px; background: rgba(255,255,255,.14); position: relative; transition: background .3s var(--d); }
+.tg i::after { content: ""; position: absolute; top: .3cqw; left: .3cqw; width: 1.7cqw; height: 1.7cqw; border-radius: 50%; background: #cfd6e2; transition: transform .3s var(--d), background .3s var(--d); }
+.scene.on .tg i { background: rgba(240,181,74,.85); }
+.scene.on .tg i::after { transform: translateX(1.9cqw); background: #fff6e0; }
+/* LOTR duo */
+.duo { display: grid; grid-template-columns: 1fr 1fr; gap: 4cqw; align-items: end; }
+.duo > div { display: grid; justify-items: center; gap: .6cqw; }
+.duo .counter { font-size: 11cqw; }
+.duo span { font: 500 1.6cqw/1.3 var(--body); color: #c9d1de; }
+/* why */
+.vs { display: grid; gap: 1cqw; width: 76cqw; }
+.vr { display: grid; grid-template-columns: 17cqw 1fr; gap: 2cqw; align-items: baseline; text-align: left; padding: 1.1cqw 1.6cqw; border-radius: 1cqw; background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.1); opacity: 0; transform: translateX(2cqw); transition: all .5s; }
+.vr em { font: italic 500 1.5cqw var(--body); color: #8e9aae; }
+.vr b { font: 500 1.55cqw/1.35 var(--body); color: #eef1f6; }
+.scene.on .vr { opacity: 1; transform: none; }
+/* touch id */
+.tid { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 4cqw; width: 80cqw; }
+.ask { display: grid; gap: .8cqw; text-align: left; font: 400 1.5cqw var(--mono); }
+.ask .dim { color: #7f8a9b; }
+.req { padding: .8cqw 1.3cqw; border-radius: .9cqw; border: 1px solid rgba(255,255,255,.14); background: rgba(255,255,255,.04); color: #eef1f6; opacity: 0; transform: translateX(-1.5cqw); transition: all .45s var(--d); }
+.scene.on .req { opacity: 1; transform: none; }
+.fp { position: relative; width: 16cqw; height: 16cqw; border-radius: 50%; display: grid; place-items: center; background: radial-gradient(circle, rgba(240,181,74,.18), rgba(240,181,74,0) 70%); }
+.fp svg { width: 70%; height: 70%; }
+.fp path { stroke: #f0b54a; stroke-width: 3; stroke-dasharray: 120; stroke-dashoffset: 120; transition: stroke-dashoffset 1.4s ease 1.2s; }
+.scene.on .fp path { stroke-dashoffset: 0; }
+.fp::after { content: ""; position: absolute; inset: 0; border-radius: 50%; border: .3cqw solid rgba(240,181,74,.6); opacity: 0; }
+.scene.on .fp::after { animation: ring 1.6s ease-out 2.4s 2; }
+@keyframes ring { from { transform: scale(.85); opacity: .9; } to { transform: scale(1.35); opacity: 0; } }
+.ok-tick { position: absolute; right: -0.6cqw; bottom: -0.6cqw; width: 4.6cqw; height: 4.6cqw; border-radius: 50%; display: grid; place-items: center; background: #7fd49b; color: #06210f; font: 800 2.6cqw var(--display); transform: scale(0); transition: transform .35s cubic-bezier(.3,1.6,.5,1) 4.2s; }
+.scene.on .ok-tick { transform: scale(1); }
+.ans { text-align: left; font: 400 1.5cqw/1.5 var(--body); color: #c9d1de; opacity: 0; transition: opacity .6s 4.4s; }
+.ans b { color: #7fd49b; font-weight: 600; }
+.scene.on .ans { opacity: 1; }
+/* controls */
+.controls { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+.play { font: 600 .9rem var(--body); color: var(--bg); background: var(--gold); border: 0; border-radius: 99px; padding: 8px 16px; cursor: pointer; min-width: 88px; }
+.dots { display: flex; gap: 6px; flex-wrap: wrap; flex: 1; }
+.dot { flex: 1; min-width: 18px; height: 6px; border-radius: 3px; border: 0; padding: 0; background: var(--line); cursor: pointer; position: relative; overflow: hidden; }
+.dot i { position: absolute; inset: 0; width: 0; background: var(--gold); }
+.dot.done i { width: 100%; }
+.play:focus-visible, .dot:focus-visible, .btn:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
+.caption { font: 400 .82rem var(--mono); color: var(--muted); }
 
-/* rules */
-.rules { display: grid; grid-template-columns: 1fr; gap: 0; border-top: 1px solid var(--rule); }
-.rule { display: grid; grid-template-columns: 2.2rem 1fr auto; gap: 12px; align-items: baseline; padding: 13px 0; border-bottom: 1px solid var(--rule); }
+/* ---------- reading column ---------- */
+.intro { display: grid; gap: 16px; }
+.intro h1 { font-size: clamp(2rem, 5vw, 3.2rem); font-weight: 800; letter-spacing: -0.02em; }
+.lede { font-size: 1.15rem; color: var(--muted); max-width: 60ch; }
+.actions { display: flex; flex-wrap: wrap; gap: 12px; }
+.btn { font: 600 .98rem var(--body); padding: 11px 18px; border-radius: 10px; border: 1px solid var(--gold); color: var(--gold); text-decoration: none; }
+.btn.primary { background: var(--gold); color: var(--bg); }
+section { display: grid; gap: 18px; }
+.cards { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
+.card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 18px; display: grid; gap: 8px; align-content: start; min-width: 0; }
+.card p { font-size: .95rem; color: var(--muted); }
+.card.feature { border-color: var(--gold); background: linear-gradient(135deg, rgba(240,181,74,.12), rgba(240,181,74,0) 60%), var(--card); }
+.card.feature h3 { font-size: 1.35rem; color: var(--gold); }
+.card.feature p { font-size: 1.02rem; color: var(--fg); }
+.rules { display: grid; border-top: 1px solid var(--line); }
+.rule { display: grid; grid-template-columns: 2rem 1fr auto; gap: 12px; align-items: baseline; padding: 12px 0; border-bottom: 1px solid var(--line); }
 .rule .n { font: 500 .85rem var(--mono); color: var(--muted); font-variant-numeric: tabular-nums; }
 .rule .t { min-width: 0; }
-.chip { font: 500 .72rem var(--mono); letter-spacing: .04em; padding: 3px 8px; border-radius: 99px; white-space: nowrap; }
-.chip.v { background: var(--gold-soft); color: var(--gold); border: 1px solid var(--gold); }
-.chip.r { color: var(--muted); border: 1px solid var(--rule); }
-.legend { font-size: .92rem; color: var(--muted); }
-
-.split { display: grid; gap: 22px; grid-template-columns: 1fr; }
-@media (min-width: 760px) { .split { grid-template-columns: 1fr 1fr; } }
-.card { background: var(--panel); border: 1px solid var(--rule); border-radius: 10px; padding: 20px; display: grid; gap: 10px; align-content: start; min-width: 0; }
-.big { font-family: var(--display); font-weight: 800; font-size: 3.2rem; line-height: 1; color: var(--gold); font-variant-numeric: tabular-nums; }
-.small { font-size: .9rem; color: var(--muted); }
-pre.cmd { margin: 0; background: var(--term-bg); color: var(--term-fg); font: .86rem/1.6 var(--mono); padding: 14px 16px; border-radius: 8px; overflow-x: auto; }
-ul.plain { margin: 0; padding-left: 1.1em; display: grid; gap: 6px; max-width: 64ch; }
-footer { padding-top: 48px; font-size: .9rem; color: var(--muted); display: grid; gap: 6px; }
-a { color: var(--gold); }
-@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+.tag { font: 500 .72rem var(--mono); padding: 3px 8px; border-radius: 99px; white-space: nowrap; border: 1px solid var(--line); color: var(--muted); }
+.tag.v { border-color: var(--gold); color: var(--gold); }
+pre.cmd { margin: 0; background: #06090f; color: #e2e7ef; font: .86rem/1.6 var(--mono); padding: 14px 16px; border-radius: 10px; overflow-x: auto; border: 1px solid var(--line); }
+footer { display: grid; gap: 8px; color: var(--muted); font-size: .92rem; border-top: 1px solid var(--line); padding-top: 24px; }
+footer .release { font: 600 1.05rem var(--display); color: var(--gold); }
+@media (max-width: 560px) { .sub { font-size: 3cqw; } .chip { font-size: 2cqw; } }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition: none !important; animation: none !important; } }
 </style>
 
 </head>
 <body>
 <div class="wrap">
-  <div class="thread" aria-hidden="true"></div>
+  <div class="stage-wrap">
+    <div class="stage" id="stage" aria-roledescription="animated explainer" aria-label="Golden Thread explainer">
+      <canvas id="fx" aria-hidden="true"></canvas>
 
-  <header class="hero section" style="display:grid;gap:18px;padding-block:64px 12px">
-    <span class="eyebrow">Golden Thread 0.21.0 · a plugin for Claude Code · MIT</span>
-    <h1>Shared memory for Claude Code sessions, with rules that hooks enforce</h1>
-    <p class="lede">Golden Thread keeps one Obsidian vault of plain markdown and git that every Claude Code session reads from and writes back to. A small set of rules is re-injected on every turn, and hooks check the ones that must not break. This page explains how it works and what changed in 0.21.0.</p>
+      <div class="scene" data-d="5200"><div class="inner">
+        <div class="chips"><span class="chip g">v0.21.0</span></div>
+        <div class="big">Golden Thread</div>
+        <div class="mid goldtxt">for Claude Code</div>
+        <div class="sub">Memory, rules and security for Claude Code, shaped to the way you work.</div>
+        <div class="chips"><span class="chip">MIT licence</span><span class="chip g">Claude Code plugin</span><span class="chip">plain markdown + git</span></div>
+      </div></div>
+
+      <div class="scene" data-d="7000"><div class="inner">
+        <div class="mid">Built for <span class="goldtxt">your role</span></div>
+        <div class="personas">
+          <div class="pa" style="transition-delay:.1s"><b>Developer</b><span>spec stub, commands and gotchas</span></div>
+          <div class="pa" style="transition-delay:.2s"><b>Product manager</b><span>status board, roadmap, stakeholders</span></div>
+          <div class="pa" style="transition-delay:.3s"><b>Project manager</b><span>status board, roadmap, stakeholders</span></div>
+          <div class="pa" style="transition-delay:.4s"><b>Executive</b><span>one-page brief, decisions needed</span></div>
+          <div class="pa" style="transition-delay:.5s"><b>Leadership</b><span>owners, goals and measures</span></div>
+          <div class="pa" style="transition-delay:.6s"><b>Operations</b><span>incident and change logs, escalation</span></div>
+          <div class="pa" style="transition-delay:.7s"><b>DBA</b><span>migrations, backup and restore, access</span></div>
+          <div class="pa" style="transition-delay:.8s"><b>Network admin</b><span>device inventory, IP/VLAN map</span></div>
+        </div>
+        <div class="sub small2">Drafts, briefs and summaries are written for your audience. Facts are never changed by role. Each role gets its own 12 one-tap buttons.</div>
+      </div></div>
+
+      <div class="scene" data-d="6400"><div class="inner">
+        <div class="mid">Choose your <span class="goldtxt">security level</span></div>
+        <div class="ladder">
+          <div class="rung" style="transition-delay:.1s">strict <small>asks before everything · default</small></div>
+          <div class="rung" style="transition-delay:.3s">trust local <small>tests, project edits, commits</small></div>
+          <div class="rung" style="transition-delay:.5s">trust network <small>+ ssh, push, installs</small></div>
+          <div class="rung" style="transition-delay:.7s">insecure <small>throwaway machines</small></div>
+          <div class="rung p" style="transition-delay:1s">paranoid <small>strict + gt's own code locked</small></div>
+        </div>
+        <div class="sub small2">A starting point, not a package.</div>
+      </div></div>
+
+      <div class="scene" data-d="7600"><div class="inner">
+        <div class="mid">Or choose each security feature <span class="goldtxt">individually</span> for a custom setup</div>
+        <div class="toggles">
+          <div class="tg" style="--d:.3s"><span>Sandbox mode<small>shell kept out of your vault</small></span><i></i></div>
+          <div class="tg" style="--d:.6s"><span>gt unlock<small>Touch ID, Windows Hello or a code</small></span><i></i></div>
+          <div class="tg" style="--d:.9s"><span>Locked gt code<small>OS lock, shell-write guard</small></span><i></i></div>
+          <div class="tg" style="--d:1.2s"><span>Signed manifest<small>each hook checks its own files</small></span><i></i></div>
+          <div class="tg" style="--d:1.5s"><span>Single-use permits<small>15 actions: push, publish, writes…</small></span><i></i></div>
+          <div class="tg" style="--d:1.8s"><span>Protected paths<small>files Claude must ask about</small></span><i></i></div>
+          <div class="tg" style="--d:2.1s"><span>Commit test gate<small>no commit without passing tests</small></span><i></i></div>
+          <div class="tg" style="--d:2.4s"><span>Push and commit fingerprints<small>prove it was you</small></span><i></i></div>
+        </div>
+        <div class="sub small2">Every protection is its own switch, on or off at any time. Your vault and gt's own files are fenced off, and folders outside your projects need your OK. <span class="goldtxt">Folder locking is coming soon.</span></div>
+      </div></div>
+
+      <div class="scene" data-d="7600"><div class="inner">
+        <div class="mid">Sensitive actions need <span class="goldtxt">your fingerprint</span></div>
+        <div class="tid">
+          <div class="ask">
+            <span class="dim">Claude wants to</span>
+            <div class="req" style="--d:.3s">push to GitHub</div>
+            <div class="req" style="--d:.5s">use a stored credential</div>
+            <div class="req" style="--d:.7s">publish a page</div>
+            <div class="req" style="--d:.9s">read a folder outside your projects</div>
+            <div class="req" style="--d:1.1s">turn a protection off</div>
+          </div>
+          <div class="fp">
+            <svg viewBox="0 0 100 100" aria-hidden="true"><g fill="none" stroke-linecap="round">
+              <path d="M30 70 Q24 50 34 36 Q50 18 66 36 Q76 50 70 70"/>
+              <path d="M38 74 Q32 52 42 42 Q50 34 58 42 Q68 52 62 74"/>
+              <path d="M46 78 Q42 58 46 50 Q50 45 54 50 Q58 58 54 78"/>
+              <path d="M22 58 Q20 30 50 22 Q80 30 78 58"/>
+              <path d="M50 54 L50 80"/>
+            </g></svg>
+            <span class="ok-tick">✓</span>
+          </div>
+          <div class="ans">Touch ID · Windows Hello · or an authenticator code<br><b>Approved for this one action.</b></div>
+        </div>
+        <div class="sub small2">An agent's shell cannot press your finger. With gt unlock on, credentials, gateway connections, publishing, folders outside your projects and every change to a protection wait for you. <span class="goldtxt">Folder locking is coming soon.</span></div>
+      </div></div>
+
+      <div class="scene" data-d="6000"><div class="inner">
+        <div class="mid"><span class="goldtxt">10</span> Core rules, re-asserted for every response</div>
+        <div class="grid10">
+          <div class="cell v" style="transition-delay:.1s">Vault writes go through a queue</div>
+          <div class="cell v" style="transition-delay:.2s">Name the vault you change</div>
+          <div class="cell v" style="transition-delay:.3s">No secret values in the session</div>
+          <div class="cell v" style="transition-delay:.4s">No commit without passing tests</div>
+          <div class="cell v" style="transition-delay:.5s">Real time on every reply</div>
+          <div class="cell v" style="transition-delay:.6s">Global memory stays small</div>
+          <div class="cell v" style="transition-delay:.7s">Look things up, don't preload</div>
+          <div class="cell v" style="transition-delay:.8s">Parallelise within one budget</div>
+          <div class="cell v" style="transition-delay:.9s">Secrets live in the store</div>
+          <div class="cell v" style="transition-delay:1s">Label every figure's evidence</div>
+        </div>
+        <div class="sub small2">Every response starts with the rules in front of Claude, so they never drift out of mind in a long session.</div>
+      </div></div>
+
+      <div class="scene" data-d="6200"><div class="inner">
+        <div class="mid">Broken rules are <span class="emb">blocked</span>, not noted</div>
+        <div class="reply"><span class="dim">rule:</span> never commit code whose tests you have not seen pass<br><span class="dim">claude:</span> Looks good, committing now.<br><span class="dim">$</span> git commit -m "add retry"<span class="stamp">BLOCKED</span></div>
+        <div class="why">core rule: test before commit · run the tests first</div>
+      </div></div>
+
+      <div class="scene" data-d="7000"><div class="inner">
+        <div class="sub">LOTR · one gateway in front of your MCP servers</div>
+        <div class="duo">
+          <div><div class="counter" data-to="50">0</div><span>% fewer tokens<br>in typical use</span></div>
+          <div><div class="counter" data-to="90" data-pre="up to ">0</div><span>% fewer with a<br>specialised agent</span></div>
+        </div>
+        <div class="sub small2">GitHub, Jira, Microsoft 365 and your own APIs behind one connection. More specialised agents are coming.</div>
+      </div></div>
+
+      <div class="scene" data-d="6800"><div class="inner">
+        <div class="mid">Picks up <span class="goldtxt">where you left off</span></div>
+        <div class="sub small2">Every session is told to track its work as it goes: decisions, open questions, test runs. So after a crash, the next session knew exactly where things stood.</div>
+        <div class="tl">
+          <div style="transition-delay:.2s"><span class="x">10:34</span>  machine crashes · 53 files uncommitted · tests running</div>
+          <div style="transition-delay:.8s"><b>10:39</b>  new session: "keep going"</div>
+          <div style="transition-delay:1.4s"><b>10:40</b>  reads what was tracked: the branch, the decisions, the test run that died</div>
+          <div style="transition-delay:2s"><b>10:41</b>  asks the exact question that was still open</div>
+          <div style="transition-delay:2.6s"><span class="ok">✓</span>  nothing redone from scratch</div>
+        </div>
+        <div class="sub small2">At the close of a session, it captures what was learned and files each piece where it belongs: project notes, decisions, the shared wiki, or a handoff for next time.</div>
+      </div></div>
+
+      <div class="scene" data-d="8000"><div class="inner">
+        <div class="mid">Why <span class="goldtxt">Golden Thread</span></div>
+        <div class="vs">
+          <div class="vr" style="transition-delay:.2s"><em>A CLAUDE.md file</em><b>is read once and drifts out of mind. Golden Thread re-asserts the rules every turn and blocks the breaks.</b></div>
+          <div class="vr" style="transition-delay:.6s"><em>A memory database</em><b>hides what it knows. Here it is markdown and git you can read, diff, correct and retract.</b></div>
+          <div class="vr" style="transition-delay:1s"><em>Skip-permissions mode</em><b>is all or nothing. Here you choose a level, then each protection on its own.</b></div>
+          <div class="vr" style="transition-delay:1.4s"><em>Cloud memory</em><b>lives on someone else's server. Your vault stays on your machine, and you can store it in git for continuity across machines.</b></div>
+        </div>
+      </div></div>
+
+      <div class="scene" data-d="7200"><div class="inner">
+        <div class="mid">Already in the <span class="goldtxt">toolkit</span></div>
+        <div class="newgrid">
+          <div class="nw" style="transition-delay:.1s"><b>LOTR gateway</b><span>One connection for GitHub, Jira, Microsoft 365.</span></div>
+          <div class="nw" style="transition-delay:.2s"><b>Visualize</b><span>Your codebase as a 3D city, or a walkthrough.</span></div>
+          <div class="nw" style="transition-delay:.3s"><b>Usage meter</b><span>Your 5-hour and weekly allowance, always visible.</span></div>
+          <div class="nw" style="transition-delay:.4s"><b>Savings shown</b><span>A ledger of the tokens gt saved you.</span></div>
+          <div class="nw" style="transition-delay:.5s"><b>Calibrate</b><span>Keeps each agent's model and effort right-sized.</span></div>
+          <div class="nw" style="transition-delay:.6s"><b>Your buttons</b><span>12 one-tap prompts you can reorder and rename.</span></div>
+          <div class="nw" style="transition-delay:.7s"><b>Offline help</b><span>Watch each command run before you try it.</span></div>
+          <div class="nw" style="transition-delay:.8s"><b>Demo tour</b><span>Try it all in a throwaway vault first.</span></div>
+        </div>
+      </div></div>
+
+      <div class="scene" data-d="6500"><div class="inner">
+        <div class="big">Golden Thread</div>
+        <div class="sub">github.com/shaven/golden-thread</div>
+        <div class="chips"><span class="chip g">v0.21.0 · 2026-10-11 · 5 pm CDT</span><span class="chip">MIT</span><span class="chip">free</span></div>
+      </div></div>
+    </div>
+    <div class="controls">
+      <button class="play" id="play" type="button">Pause</button>
+      <div class="dots" id="dots" role="tablist" aria-label="Scenes"></div>
+    </div>
+    <span class="caption">About 85 seconds · plays on its own · tap a bar to jump to a scene</span>
+  </div>
+
+  <div class="intro">
+    <span class="eyebrow">A plugin for Claude Code · MIT</span>
+    <h1>Shared memory for Claude Code sessions, with rules that are enforced</h1>
+    <p class="lede">Golden Thread keeps one Obsidian vault of plain markdown and git that every session reads from and writes back to. A small set of rules is re-asserted for every response, and replies or commands that break the critical ones are blocked.</p>
     <div class="actions">
       <a class="btn primary" href="https://github.com/shaven/golden-thread" target="_blank" rel="noopener">Source on GitHub</a>
       <a class="btn" href="#new">What's new in 0.21.0</a>
     </div>
-    <div class="facts"><span><b>10</b> Core rules</span><span><b>5</b> checked by hooks</span><span><b>41</b> skills</span><span>version <b>0.21.0</b></span></div>
-  </header>
+  </div>
 
-  <section id="watch" aria-labelledby="watch-h">
-    <span class="eyebrow">Replayed from the session that built this page</span>
-    <h2 id="watch-h">Watch it catch things</h2>
-    <p>Claude made this page in a Golden Thread session. That session began right after a kernel panic, and it was blocked by one of its own rules an hour before it wrote these words. The first two scenes are what happened.</p>
-    <div class="player">
-      <div class="tabs" role="tablist" aria-label="Scenes">
-        <button class="tab" role="tab" id="tab-crash" aria-selected="true" data-scene="crash">The Mac crashed mid-build</button>
-        <button class="tab" role="tab" id="tab-time" aria-selected="false" data-scene="time">A rule slipped</button>
-        <button class="tab" role="tab" id="tab-commit" aria-selected="false" data-scene="commit">Commit without tests</button>
-      </div>
-      <div class="screen" id="screen" role="tabpanel" aria-live="polite"></div>
-      <div class="bar"><span class="note" id="note"></span><button class="replay" id="replay" type="button">Replay</button></div>
+  <section aria-labelledby="role-h">
+    <span class="eyebrow">User types</span>
+    <h2 id="role-h">Tailored to your role</h2>
+    <p>Pick one or more roles at install: developer, product manager, project manager, executive, leadership, operations, DBA or network administrator. Each role adds the files people in it usually keep, such as a spec stub, a roadmap, a one-page brief, an incident log or a device inventory. It also gives you 12 one-tap buttons in the gt pane. Drafts, briefs and summaries are written for your audience; agents that find and check facts are never told your role, so what is recorded as true does not change with it.</p>
+  </section>
+
+  <section aria-labelledby="sw-h">
+    <span class="eyebrow">Security</span>
+    <h2 id="sw-h">A level to start, then every protection is its own switch</h2>
+    <div class="card feature"><h3>Your fingerprint, for the things that matter</h3><p>Turn on gt unlock and the sensitive actions wait for you: using a stored credential, a gateway connection to GitHub, Jira or Microsoft 365, publishing, and any change that loosens a protection. You approve with Touch ID, Windows Hello or an authenticator code, and the approval covers that action. An agent's shell cannot do it for you.</p></div>
+    <div class="cards">
+      <div class="card"><h3>Security level</h3><p>Strict, trust local, trust network, insecure or paranoid. It decides which commands Claude may run without asking. It cuts prompts and is not a wall.</p></div>
+
+      <div class="card"><h3>Sandbox mode</h3><p>Fences Claude's shell and file tools off your vault and gt's own state; the vault is reached only through gt's queue.</p></div>
+      <div class="card"><h3>Paranoid parts</h3><p>OS lock on gt's code, a guard on shell writes to it, a signed manifest each hook checks, and single-use permits for up to 15 risky actions. Each part has its own switch.</p></div>
+      <div class="card"><h3>Folders</h3><p>Your vault and gt's own files are fenced off from Claude's shell and file tools. Folders outside your projects need your OK before they are read, and files are written only inside a git project, never to <code>~/.ssh</code>, <code>.env</code> or <code>.git</code>. Locking any folder you choose is coming soon.</p></div>
+      <div class="card"><h3>Individual guards</h3><p>Protected paths, the commit test gate, push and commit fingerprints, and limits on the file and network brokers.</p></div>
     </div>
+    <p class="caption">Change any of them with <code>/gt:gt-settings &lt;name&gt; &lt;value&gt;</code>. With gt unlock on, loosening one needs you present, so an agent cannot do it on its own.</p>
   </section>
 
   <section aria-labelledby="why-h">
-    <span class="eyebrow">The idea</span>
-    <h2 id="why-h">"In context" is not "applied"</h2>
-    <p>A rule can sit in a loaded file for a whole session and still get dropped for dozens of turns. Nothing deleted it; whatever is on screen right now crowds it out. So a rule is only as durable as the thing that re-asserts it.</p>
-    <p>Golden Thread keeps a small Core tier. Every rule is injected on every turn, in every project. The ones that must never break are also <em>validated</em>: a hook reads the finished reply, or the tool call about to run, and blocks it.</p>
+    <span class="eyebrow">Compared with</span>
+    <h2 id="why-h">Why Golden Thread</h2>
+    <div class="cards">
+      <div class="card"><h3>vs. a CLAUDE.md file</h3><p>A rules file is read once and drifts out of attention in a long session. Golden Thread re-injects its Core rules on every turn and blocks the breaks of the critical ones.</p></div>
+      <div class="card"><h3>vs. a memory database</h3><p>Memory is plain markdown in git: you can read it, diff it, fix a wrong fact and retract it everywhere it was repeated.</p></div>
+      <div class="card"><h3>vs. skipping permissions</h3><p>Skip-permissions is all or nothing. Here you pick a level, then turn each protection on or off by itself.</p></div>
+      <div class="card"><h3>vs. cloud memory</h3><p>Your vault stays on your machine, in your own git, and opens in Obsidian like any other notes.</p></div>
+      <div class="card"><h3>vs. many MCP connections</h3><p>LOTR puts one gateway in front of your MCP servers, so tool schemas and large results stay out of your main context.</p></div>
+    </div>
+  </section>
+
+  <section id="new" aria-labelledby="new-h">
+    <span class="eyebrow">Coming in 0.21.0</span>
+    <h2 id="new-h">What's new</h2>
+    <div class="cards">
+      <div class="card"><h3>Security level at install</h3><p>The installer asks every choice up front, security first. Five levels, from strict to paranoid, decide how much Claude may run without asking. They reduce prompts; they are not a security boundary.</p></div>
+      <div class="card"><h3>Paranoid</h3><p>Strict plus locks on gt's installed code: read-only files, a guard on shell writes, and a signed manifest each hook checks before it runs. Changing it needs you in person.</p></div>
+      <div class="card"><h3>Single-use permits</h3><p>Optional tokens for 15 risky actions, including push, publish, file writes and network fetches. Bound to one action and target, they expire in minutes and work once.</p></div>
+      <div class="card"><h3>File and network brokers</h3><p>Disk reads, web fetches and file writes each go through one narrow agent. Paths like <code>~/.ssh</code>, <code>.env</code> and <code>.git</code> are never written, even with approval.</p></div>
+      <div class="card"><h3>Spend less allowance</h3><p>One token profile sets seven cost settings. A cache-expiry guard compacts idle sessions while their cache is warm, and a models page shows each agent's cost.</p></div>
+      <div class="card"><h3>Memory you can correct</h3><p><code>/gt:gt-forget</code> retracts every note that states a wrong fact. Handoffs close only when each open item is resolved.</p></div>
+    </div>
+    <p class="caption">Breaking: <code>/gt:gt-close</code> now closes the session and <code>/gt:gt-complete</code> completes a project, task or handoff. The levels very secure, mostly secure and partly secure are renamed strict, trust local and trust network; an existing setting carries over. Full list in the <a href="https://github.com/shaven/golden-thread/blob/main/CHANGELOG.md" target="_blank" rel="noopener">changelog</a>.</p>
   </section>
 
   <section aria-labelledby="rules-h">
     <span class="eyebrow">The Core tier</span>
     <h2 id="rules-h">The ten rules</h2>
-    <p class="legend"><span class="chip v">checked</span> a hook blocks the violation &nbsp; <span class="chip r">reminder</span> re-injected every turn</p>
     <div class="rules">
-      <div class="rule"><span class="n">1</span><span class="t">Write to the vault only through a queue, never straight into a file another session is editing.</span><span class="chip v">checked</span></div>
-      <div class="rule"><span class="n">2</span><span class="t">Name the vault on every command that changes it; never let the target be guessed.</span><span class="chip v">checked</span></div>
-      <div class="rule"><span class="n">3</span><span class="t">Never put a secret's value into the session, not even to check or redact it.</span><span class="chip v">checked</span></div>
-      <div class="rule"><span class="n">4</span><span class="t">Never commit code whose tests you have not seen pass, and say which ran.</span><span class="chip v">checked</span></div>
-      <div class="rule"><span class="n">5</span><span class="t">Begin every reply with the real wall-clock time from a hook, not a guess.</span><span class="chip v">checked</span></div>
-      <div class="rule"><span class="n">6</span><span class="t">The always-loaded memory holds only facts every project needs.</span><span class="chip r">reminder</span></div>
-      <div class="rule"><span class="n">7</span><span class="t">Don't load the whole memory index up front; look things up.</span><span class="chip r">reminder</span></div>
-      <div class="rule"><span class="n">8</span><span class="t">Run independent work in parallel, within one budget shared by every session on the machine.</span><span class="chip r">reminder</span></div>
-      <div class="rule"><span class="n">9</span><span class="t">Secrets live only in the secrets store, never in source, a repo, a log or a session.</span><span class="chip r">reminder</span></div>
-      <div class="rule"><span class="n">10</span><span class="t">Label every figure presented as fact: unverified, self-verified or independently verified.</span><span class="chip r">reminder</span></div>
+      <div class="rule"><span class="n">1</span><span class="t">Write to the vault only through a queue, never straight into a file another session is editing.</span><span class="tag v">checked</span></div>
+      <div class="rule"><span class="n">2</span><span class="t">Name the vault on every command that changes it.</span><span class="tag v">checked</span></div>
+      <div class="rule"><span class="n">3</span><span class="t">Never put a secret's value into the session, not even to check or redact it.</span><span class="tag v">checked</span></div>
+      <div class="rule"><span class="n">4</span><span class="t">Never commit code whose tests you have not seen pass, and say which ran.</span><span class="tag v">checked</span></div>
+      <div class="rule"><span class="n">5</span><span class="t">Begin every reply with the real wall-clock time from a hook.</span><span class="tag v">checked</span></div>
+      <div class="rule"><span class="n">6</span><span class="t">The always-loaded memory holds only facts every project needs.</span><span class="tag">reminder</span></div>
+      <div class="rule"><span class="n">7</span><span class="t">Don't load the whole memory index up front; look things up.</span><span class="tag">reminder</span></div>
+      <div class="rule"><span class="n">8</span><span class="t">Run independent work in parallel, within one budget shared by every session.</span><span class="tag">reminder</span></div>
+      <div class="rule"><span class="n">9</span><span class="t">Secrets live only in the secrets store, never in source, a repo, a log or a session.</span><span class="tag">reminder</span></div>
+      <div class="rule"><span class="n">10</span><span class="t">Label every figure presented as fact: unverified, self-verified or independently verified.</span><span class="tag">reminder</span></div>
     </div>
-    <p class="small">You can add your own, and the tier stays small on purpose: every rule added dilutes the rest.</p>
-  </section>
-
-  <section id="new" aria-labelledby="new-h">
-    <span class="eyebrow">Coming in 0.21.0</span>
-    <h2 id="new-h">What's new in 0.21.0</h2>
-    <div class="split">
-      <div class="card">
-        <h3>You choose the security level at install</h3>
-        <p>The installer now asks every choice up front, security first, in plain language. If Claude runs the install for you, it asks you each question; an install with no answer to a security question stops before anything is installed.</p>
-        <p class="small">Five levels: strict (the default), trust local, trust network, insecure, and paranoid. They decide how much Claude may run without asking. They reduce prompts and are not a security boundary.</p>
-      </div>
-      <div class="card">
-        <h3>Paranoid: gt's own code is locked</h3>
-        <p>Paranoid is strict plus locks on gt's installed code. The OS marks hooks and plugin files read-only, a shell command that writes to them is stopped, and each hook checks a signed manifest of its own files before it runs.</p>
-        <p class="small">Changing that code, or turning a protection off, needs you in person: Touch ID, Windows Hello, an authenticator code, or a typed confirmation at a terminal.</p>
-      </div>
-      <div class="card">
-        <h3>Single-use permits for risky actions</h3>
-        <p>Optional tokens for 15 actions, including push, publish, file writes and network fetches. You create one in a terminal; it is bound to one action and one target, expires in minutes and works once.</p>
-      </div>
-      <div class="card">
-        <h3>File and network access through brokers</h3>
-        <p>Reading disk, fetching a web page and writing a file each go through one narrow agent with one tool. Some paths are never written even with approval, such as <code>~/.ssh</code>, <code>.env</code> files, <code>.git</code> and shell start-up files. Credential-shaped text is withheld from what Claude reads.</p>
-      </div>
-      <div class="card">
-        <h3>Spend less of your allowance</h3>
-        <p>One token profile sets seven cost settings at once. A cache-expiry guard can compact an idle session while its prompt cache is still warm. A models page shows each agent's model, effort and estimated cost.</p>
-      </div>
-      <div class="card">
-        <h3>Offline help that shows each command running</h3>
-        <p><code>/gt:gt-help</code> opens one local page. A simulated terminal plays each command and workflow, and a Security tab lets you try an action at each level and see whether Claude would ask.</p>
-      </div>
-      <div class="card">
-        <h3>Wrong facts can be retracted</h3>
-        <p><code>/gt:gt-forget</code> finds every note that states a fact that turned out to be wrong and retracts it. Notes are ranked by when they were last used, so stale ones sink without being deleted.</p>
-      </div>
-      <div class="card">
-        <h3>Handoffs close item by item</h3>
-        <p>A handoff between sessions closes only when each open item is resolved: done, turned into a task, or dropped with a reason. Each one gets a stable id that tasks and notes can cite.</p>
-      </div>
-    </div>
-    <p class="small">Breaking: <code>/gt:gt-close</code> now closes the session and <code>/gt:gt-complete</code> completes a project, task or handoff; the levels very secure, mostly secure and partly secure are now strict, trust local and trust network, and an existing setting carries over. The full list is in the <a href="https://github.com/shaven/golden-thread/blob/main/CHANGELOG.md" target="_blank" rel="noopener">changelog</a>.</p>
-  </section>
-
-  <section aria-labelledby="more-h">
-    <span class="eyebrow">Also in the box</span>
-    <h2 id="more-h">Memory that moves up, and tools that cost less</h2>
-    <div class="split">
-      <div class="card">
-        <h3>LOTR: one gateway for your MCP servers</h3>
-        <div class="big">98%</div>
-        <p>fewer main-context tokens over 25 Jira queries, sent through LOTR with a specialised agent instead of connecting the server directly.</p>
-        <p class="small">One workload, measured by the author. Your servers will differ.</p>
-      </div>
-      <div class="card">
-        <h3>Knowledge climbs a ladder</h3>
-        <ul class="plain">
-          <li>A session finding goes to the project's research notes.</li>
-          <li>The stable ones become decisions and design.</li>
-          <li>What holds across projects becomes a wiki page.</li>
-          <li>Handoffs carry open items to the next session, and a task rollup ranks what is next across every project.</li>
-        </ul>
-      </div>
-    </div>
+    <p class="caption">Every rule is re-asserted for every response; "checked" rules are also verified, and a reply or command that breaks one is blocked. LOTR figures are the author's own measurements; savings depend on your servers and workload.</p>
   </section>
 
   <section aria-labelledby="try-h">
-    <span class="eyebrow">Try it</span>
-    <h2 id="try-h">Install</h2>
+    <span class="eyebrow">Install</span>
+    <h2 id="try-h">Try it</h2>
     <pre class="cmd">git clone https://github.com/shaven/golden-thread
 bash golden-thread/golden-thread-plugin/install.sh --vault ~/MyVault
 # then restart Claude Code: plugins and hooks load at session start</pre>
-    <p class="small">macOS, Linux and Windows. Upgrading is the same command. Nothing is pushed or published on your behalf.</p>
   </section>
 
   <footer>
-    <span class="eyebrow" style="font-size:.9rem">v0.21.0 is released on 2026-10-11 at 5 pm CDT. Until then, the install above gives 0.20.5.</span>
-    <span>Golden Thread is an independent open-source project for Claude Code. MIT licence.</span>
-    <span>Questions and ideas: <a href="https://github.com/shaven/golden-thread" target="_blank" rel="noopener">github.com/shaven/golden-thread</a></span>
+    <span class="release">v0.21.0 is released on 2026-10-11 at 5 pm CDT. Until then, the install above gives 0.20.5.</span>
+    <span>Golden Thread is an independent open-source project for Claude Code. MIT licence. <a href="https://github.com/shaven/golden-thread" target="_blank" rel="noopener">github.com/shaven/golden-thread</a></span>
   </footer>
 </div>
 
 <script>
 (function () {
-  var SCENES = {
-    crash: {
-      note: "Replayed from 2026-10-10. A kernel panic rebooted the Mac mid-build.",
-      lines: [
-        ["dim", "10:34  kernel panic. The Mac restarts."],
-        ["dim", "10:39  new Claude Code session"],
-        ["you", "› Let's keep going with the build for golden-thread."],
-        ["", "Found the work branch: build/0.21.0-security, 53 files changed, nothing committed."],
-        ["", "The crashed session's test run died 17 minutes in; its log was in /tmp, cleared at reboot."],
-        ["gold", "It was waiting on your answer to: \"How should Paranoid sit on the security ladder?\""],
-        ["", "Restarting the tests in the background, and asking you again."],
-        ["green", "✓ answered · plan approved · decision written to the vault through the queue"],
-        ["dim", "Nothing was redone from scratch."]
-      ]
-    },
-    time: {
-      note: "Replayed from the same day: the Stop hook blocked a reply that skipped Core rule 5.",
-      lines: [
-        ["you", "› Can you draft a Reddit post for the plugin?"],
-        ["", "Reddit blocks the fetch tool. I'll try the post's public JSON…"],
-        ["dim", "… (the draft is written) …"],
-        ["red", "Stop hook: Core rule violated (core_timestamp_every_message): neither the final answer nor the first text of this turn begins with the timestamp. Start the final answer with the value injected by the UserPromptSubmit hook; do not guess it."],
-        ["gold", "2026-10-10 12:30 CDT"],
-        ["", "The Stop hook was right: my first text this turn went out without the timestamp."],
-        ["dim", "The reply could not end until it was fixed."]
-      ]
-    },
-    commit: {
-      note: "The guard's real message. File names are an example.",
-      lines: [
-        ["you", "› Looks good, commit it."],
-        ["dim", "$ git commit -m \"Add retry to the uploader\""],
-        ["red", "BLOCKED by Core rule core_test_before_commit."],
-        ["", "  1 code file(s) staged, and their tests have not been seen to pass."],
-        ["", "Do this instead:"],
-        ["", "  1. Run them, then record it: gt_test_receipt.py record --repo . --ok"],
-        ["", "  2. This repo has no tests?   touch .gt-no-test-gate   -- exempt, visibly, for everyone."],
-        ["", "  3. This one commit only:     GT_TEST_GATE=off git commit ..."],
-        ["green", "✓ tests run and seen to pass · receipt recorded · commit allowed"]
-      ]
-    }
-  };
-  var screen = document.getElementById("screen"), note = document.getElementById("note");
-  var timers = [], current = "crash";
+  var stage = document.getElementById("stage");
+  var scenes = Array.prototype.slice.call(stage.querySelectorAll(".scene"));
+  var dotsEl = document.getElementById("dots"), playBtn = document.getElementById("play");
   var still = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  function play(name) {
-    timers.forEach(clearTimeout); timers = [];
-    current = name;
-    var s = SCENES[name];
-    note.textContent = s.note;
-    screen.innerHTML = "";
-    var els = s.lines.map(function (ln) {
-      var e = document.createElement("span");
-      e.className = "l " + ln[0];
-      e.textContent = ln[1];
-      screen.appendChild(e);
-      return e;
-    });
-    if (still) return;
-    els.forEach(function (e, i) {
-      if (i === 0) return;
-      e.classList.add("hide");
-      timers.push(setTimeout(function () { e.classList.remove("hide"); }, i * 700));
+  var idx = 0, playing = !still, t0 = 0, elapsed = 0, raf = 0;
+  var dots = scenes.map(function (s, i) {
+    var b = document.createElement("button");
+    b.className = "dot"; b.type = "button"; b.setAttribute("aria-label", "Scene " + (i + 1));
+    b.appendChild(document.createElement("i"));
+    b.addEventListener("click", function () { go(i); });
+    dotsEl.appendChild(b); return b;
+  });
+  function dur(i) { return +scenes[i].getAttribute("data-d") || 6000; }
+  function counter(on) {
+    var els = scenes[idx].querySelectorAll(".counter[data-to]");
+    Array.prototype.forEach.call(document.querySelectorAll(".counter[data-to]"), function (el) { el.textContent = (el.getAttribute("data-pre") || "") + "0"; });
+    if (!on) return;
+    Array.prototype.forEach.call(els, function (el) {
+      var to = +el.getAttribute("data-to"), pre = el.getAttribute("data-pre") || "";
+      if (still) { el.textContent = pre + to; return; }
+      var s0 = performance.now(), mine = idx;
+      (function tick(now) {
+        var p = Math.min(1, (now - s0) / 1500), e = 1 - Math.pow(1 - p, 3);
+        el.textContent = pre + Math.round(to * e);
+        if (p < 1 && idx === mine) requestAnimationFrame(tick);
+      })(s0);
     });
   }
-  document.querySelectorAll(".tab").forEach(function (t) {
-    t.addEventListener("click", function () {
-      document.querySelectorAll(".tab").forEach(function (o) { o.setAttribute("aria-selected", o === t ? "true" : "false"); });
-      play(t.getAttribute("data-scene"));
-    });
+  function go(i) {
+    scenes[idx].classList.remove("on");
+    idx = (i + scenes.length) % scenes.length;
+    // restart transitions on the new scene
+    void scenes[idx].offsetWidth;
+    scenes[idx].classList.add("on");
+    dots.forEach(function (d, j) { d.classList.toggle("done", j < idx); d.firstChild.style.width = j < idx ? "100%" : "0"; d.setAttribute("aria-selected", j === idx ? "true" : "false"); });
+    counter(!!scenes[idx].querySelector(".counter[data-to]"));
+    elapsed = 0; t0 = performance.now();
+  }
+  function loop(now) {
+    if (playing) {
+      var e = elapsed + (now - t0), d = dur(idx);
+      dots[idx].firstChild.style.width = Math.min(100, e / d * 100) + "%";
+      if (e >= d) { go(idx + 1); }
+    }
+    raf = requestAnimationFrame(loop);
+  }
+  playBtn.addEventListener("click", function () {
+    if (playing) { elapsed += performance.now() - t0; playing = false; playBtn.textContent = "Play"; }
+    else { t0 = performance.now(); playing = true; playBtn.textContent = "Pause"; }
   });
-  document.getElementById("replay").addEventListener("click", function () { play(current); });
-  play("crash");
+  if (!playing) playBtn.textContent = "Play";
+  go(0);
+  requestAnimationFrame(loop);
+
+  // ---------- the thread: particles and a gold strand weaving through session nodes ----------
+  var cv = document.getElementById("fx"), cx = cv.getContext("2d"), W = 0, H = 0, dpr = 1;
+  var motes = [];
+  function size() {
+    dpr = Math.min(2, window.devicePixelRatio || 1);
+    W = stage.clientWidth; H = stage.clientHeight;
+    cv.width = W * dpr; cv.height = H * dpr; cx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    motes = [];
+    for (var i = 0; i < 70; i++) motes.push({ x: Math.random() * W, y: Math.random() * H, r: Math.random() * 1.4 + .3, v: Math.random() * .25 + .05, a: Math.random() * .5 + .15 });
+  }
+  size(); window.addEventListener("resize", size);
+  var nodes = 6;
+  function draw(t) {
+    cx.clearRect(0, 0, W, H);
+    for (var i = 0; i < motes.length; i++) {
+      var m = motes[i]; if (!still) { m.y -= m.v; if (m.y < -4) { m.y = H + 4; m.x = Math.random() * W; } }
+      cx.fillStyle = "rgba(255,220,160," + m.a * .5 + ")"; cx.beginPath(); cx.arc(m.x, m.y, m.r, 0, 6.283); cx.fill();
+    }
+    var ph = still ? 0 : t / 1600, yb = H * .86;
+    cx.lineWidth = Math.max(1.2, W / 600);
+    var g = cx.createLinearGradient(0, 0, W, 0);
+    g.addColorStop(0, "rgba(240,181,74,0)"); g.addColorStop(.2, "rgba(240,181,74,.55)"); g.addColorStop(.8, "rgba(240,181,74,.55)"); g.addColorStop(1, "rgba(240,181,74,0)");
+    cx.strokeStyle = g; cx.beginPath();
+    for (var x = 0; x <= W; x += 6) {
+      var y = yb + Math.sin(x / W * 9 + ph) * H * .025 + Math.sin(x / W * 3.1 - ph * .7) * H * .02;
+      if (x === 0) cx.moveTo(x, y); else cx.lineTo(x, y);
+    }
+    cx.stroke();
+    for (var n = 1; n <= nodes; n++) {
+      var nx = W * n / (nodes + 1), ny = yb + Math.sin(nx / W * 9 + ph) * H * .025 + Math.sin(nx / W * 3.1 - ph * .7) * H * .02;
+      var pulse = still ? .6 : .5 + .5 * Math.sin(t / 500 + n);
+      cx.fillStyle = "rgba(240,181,74," + (.25 + .5 * pulse) + ")";
+      cx.beginPath(); cx.arc(nx, ny, W / 260 + pulse * W / 500, 0, 6.283); cx.fill();
+    }
+    if (!still) requestAnimationFrame(draw);
+  }
+  requestAnimationFrame(draw);
 })();
 </script>
 
