@@ -43,7 +43,7 @@ button,.btn{font:inherit;cursor:pointer;color:var(--ink);background:var(--panel)
 button:hover,.btn:hover{border-color:var(--accent)}
 button.primary,a.btn.primary{text-decoration:none;background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
 button[aria-pressed=true]{background:var(--soft);border-color:var(--accent)}
-.layout{display:grid;grid-template-columns:minmax(14rem,19rem) 1fr;gap:1rem;max-width:80rem;margin:0 auto;padding:1rem 16px 4rem}
+.layout{display:grid;grid-template-columns:minmax(14rem,19rem) 1fr;gap:1rem;max-width:96rem;margin:0 auto;padding:1rem 16px 4rem}
 @media (max-width:760px){.layout{grid-template-columns:1fr}}
 nav#side{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:.6rem .8rem;align-self:start;max-height:calc(100vh - 6rem);overflow:auto;position:sticky;top:4.6rem}
 @media (max-width:760px){nav#side{position:static;max-height:none}}
@@ -67,14 +67,14 @@ main:focus{outline:none}
 .tile small{display:block;color:var(--muted)}
 .cmdhead{display:flex;flex-wrap:wrap;gap:.6rem;align-items:center}
 .cmdhead code{font-size:1.15rem;background:var(--soft);padding:.2rem .6rem;border-radius:8px}
-.two{display:grid;grid-template-columns:minmax(0,3fr) minmax(0,2fr);gap:1rem;align-items:start}
+.two{display:grid;grid-template-columns:minmax(0,1fr);gap:1rem;align-items:start} /* info-site copy: terminal full width, notes below */
 @media (max-width:980px){.two{grid-template-columns:1fr}}
 .variants{display:flex;flex-wrap:wrap;gap:.4rem;margin:.6rem 0}
 .term{background:var(--term-bg);color:var(--term-ink);border-radius:12px;border:1px solid var(--line);overflow:hidden;box-shadow:var(--shadow)}
 .term .bar{display:flex;align-items:center;gap:.4rem;padding:.4rem .7rem;background:rgba(127,127,127,.15);font-size:.8rem;color:var(--term-dim)}
 .term .bar i{width:.7rem;height:.7rem;border-radius:50%;background:#e5534b;display:inline-block}
 .term .bar i:nth-child(2){background:#d29922}.term .bar i:nth-child(3){background:#3fb950}
-.term pre{margin:0;padding:.8rem 1rem;min-height:15rem;max-height:min(36rem,72vh);overflow:auto;font:13.5px/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;white-space:pre-wrap;word-break:break-word}
+.term pre{margin:0;padding:.8rem 1rem;min-height:15rem;max-height:min(36rem,72vh);overflow:auto;font:12.5px/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;white-space:pre;word-break:normal;overflow-wrap:normal} /* info-site copy: keep columns, scroll sideways */
 .term .in{color:var(--term-in)}
 .term .say{color:var(--term-say)}
 .term .note{color:var(--term-dim);font-style:italic}
@@ -126,7 +126,7 @@ details summary{cursor:pointer;color:var(--muted)}
 .wf dt{font-size:.78rem;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);margin-top:.5rem}
 .wf dd{margin:.1rem 0 0}
 .wf .payoff{font-style:italic;color:var(--muted)}
-.wf pre{background:var(--term-bg);color:var(--term-ink);padding:.6rem .8rem;border-radius:8px;overflow:auto;max-height:22rem;font:12.5px/1.45 ui-monospace,Menlo,Consolas,monospace;white-space:pre-wrap}
+.wf pre{background:var(--term-bg);color:var(--term-ink);padding:.6rem .8rem;border-radius:8px;overflow:auto;max-height:22rem;font:12.5px/1.45 ui-monospace,Menlo,Consolas,monospace;white-space:pre}
 .roles{display:flex;flex-wrap:wrap;gap:.4rem;align-items:center;margin:.4rem 0}
 </style>
 <script src="help-security.js"></script>

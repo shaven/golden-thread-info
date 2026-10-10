@@ -16,3 +16,5 @@ The plugin's source, docs and issues live in the main repo. This repo holds only
 - [`walkthrough.html`](walkthrough.html): a gt-visualize 3D walkthrough of how Golden Thread helps every role, made with gt-visualize itself.
 - [`help/`](help/help.html): gt 0.21.0's offline help, the same file `/gt:gt-help` opens. The page's feature tiles and workflow links open it at the matching command, workflow or tab.
 - [`rules.html`](rules.html): the 10 Core rules, the exact block Claude sees with every prompt, and the real message each checked rule prints when it blocks.
+- [`roles.html`](roles.html): each role's audience line, starter files and 12 pane buttons, from the real role packs.
+- [`security.html`](security.html): the five levels, the fingerprint flow, and every security switch, with a custom-setup command builder.
