@@ -586,7 +586,9 @@ window.GT_HELP_META = {"personas": {"product-manager": {"plain": true, "core": [
       if (andPlay) me.play();
     };
     me.stages = lines.map(function (L, n) { return L.k === "stage" ? {name: L.s, idx: n} : null; }).filter(Boolean);
-    function schedule(ms) { clearTimeout(timer); timer = setTimeout(tick, ms); }
+    // info-site copy only: &slow=<n> multiplies every delay (gt's own help has no such setting)
+    var SLOW = (function () { var m = /[&#]slow=([0-9.]+)/.exec(location.hash); var v = m ? parseFloat(m[1]) : 1; return v > 0 && v <= 5 ? v : 1; })();
+    function schedule(ms) { clearTimeout(timer); timer = setTimeout(tick, ms * SLOW); }
     function tick() {
       if (!playing) return;
       if (i >= lines.length) { stop(true); return; }
